@@ -3,6 +3,9 @@ import boto3
 import botocore
 from diagram_discovery import image_to_workflow_details, image_to_component_list
 from template_discovery import template_to_workflow_details, template_to_component_list
+from rules_engine import return_component_rules
+from raf_report import raf_report_output
+
 
 
 st.set_page_config(page_title="Resiliency AI", page_icon=":mag", layout="wide")
@@ -23,7 +26,9 @@ uploaded_file = st.file_uploader(
 )
 
 
-go = st.button("Generate Cloud Formation Template")
+
+
+go = st.button("Analyze Architecture")
 if go:
     st.write(uploaded_file.name)
     file_type= uploaded_file.type
@@ -66,8 +71,22 @@ if go:
 
 
         #Continue app logic here
-        st.write("Continue app logic here")
-        
+        st.write("Getting Component Rules")
+
+        rules_string = ""
+        for component in components:
+            rules_string += return_component_rules(component)
+
+
+        #Send info to final prompts
+
+        report,improvements = raf_report_output(details, rules_string)
+
+        with st.expander("Resiliency Report"):
+            st.markdown(report)
+
+        with st.expander("Improvements"):
+            st.markdown(improvements)
 
     else:
         st.error("Please upload a file")
